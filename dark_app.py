@@ -205,14 +205,16 @@ WEIGHTS = {
     "Urgency": 0.10,
 }
 
-ZONES = {
-    "Forest": [72, 65, 35, 95, 75],
-    "Residential Area": [80, 85, 95, 45, 90],
-    "Hospital": [75, 90, 90, 30, 95],
-    "Smart Farm": [60, 65, 45, 75, 60],
-    "River & Dam": [85, 75, 70, 85, 85],
-    "Industrial Zone": [82, 70, 75, 65, 80],
-}
+# Initializing mutable ZONES inside st.session_state so TERA-EYE can inject live changes
+if "zones_data" not in st.session_state:
+    st.session_state.zones_data = {
+        "Forest": [72, 65, 35, 95, 75],
+        "Residential Area": [80, 85, 95, 45, 90],
+        "Hospital": [75, 90, 90, 30, 95],
+        "Smart Farm": [60, 65, 45, 75, 60],
+        "River & Dam": [85, 75, 70, 85, 85],
+        "Industrial Zone": [82, 70, 75, 65, 80],
+    }
 
 
 def calculate_risk(scores):
@@ -246,7 +248,7 @@ def risk_color(level):
 def make_zone_dataframe():
     rows = []
 
-    for zone, values in ZONES.items():
+    for zone, values in st.session_state.zones_data.items():
         scores = dict(zip(FACTORS, values))
         risk = calculate_risk(scores)
 
@@ -395,7 +397,7 @@ st.markdown(
         </div>
         <br>
         <span class="status-chip">● SYSTEM ONLINE</span>
-        &nbsp;
+         
         <span class="status-chip">RULE-BASED PROTOTYPE</span>
     </div>
     """,
@@ -434,7 +436,7 @@ with st.sidebar:
         "receive live environmental sensor readings."
     )
 
-# -------------------- NAVIGATION --------------------
+# -------------------- NAVIGATION (7 TABS INCLUDING TERA-EYE) --------------------
 
 (
     tab_command,
@@ -443,6 +445,7 @@ with st.sidebar:
     tab_scenario,
     tab_mission,
     tab_method,
+    tab_eye,
 ) = st.tabs(
     [
         "⚡ Command Centre",
@@ -451,6 +454,7 @@ with st.sidebar:
         "🧪 Scenario Lab",
         "🎯 Mission Control",
         "📘 Methodology",
+        "🛰️ TERA-EYE",
     ]
 )
 
@@ -554,11 +558,11 @@ with tab_zone:
 
     selected_zone = st.selectbox(
         "Select a zone",
-        list(ZONES.keys()),
+        list(st.session_state.zones_data.keys()),
         key="zone_select",
     )
 
-    values = ZONES[selected_zone]
+    values = st.session_state.zones_data[selected_zone]
     scores = dict(zip(FACTORS, values))
     score = calculate_risk(scores)
     level = classify_risk(score)
@@ -665,7 +669,7 @@ with tab_compare:
 
     selected_zones = st.multiselect(
         "Choose zones to compare",
-        options=list(ZONES.keys()),
+        options=list(st.session_state.zones_data.keys()),
         default=["Forest", "Residential Area", "Hospital"],
         key="compare_zones",
     )
@@ -674,7 +678,7 @@ with tab_compare:
         comparison_rows = []
 
         for zone in selected_zones:
-            values = ZONES[zone]
+            values = st.session_state.zones_data[zone]
             row = {"Zone": zone}
             row.update(dict(zip(FACTORS, values)))
             row["Risk Index"] = calculate_risk(dict(zip(FACTORS, values)))
@@ -708,7 +712,7 @@ with tab_compare:
         radar_compare = go.Figure()
 
         for zone in selected_zones:
-            values = ZONES[zone]
+            values = st.session_state.zones_data[zone]
             radar_compare.add_trace(
                 go.Scatterpolar(
                     r=values + [values[0]],
@@ -756,11 +760,11 @@ with tab_scenario:
 
     scenario_zone = st.selectbox(
         "Choose the zone for your scenario",
-        list(ZONES.keys()),
+        list(st.session_state.zones_data.keys()),
         key="scenario_zone",
     )
 
-    base_values = dict(zip(FACTORS, ZONES[scenario_zone]))
+    base_values = dict(zip(FACTORS, st.session_state.zones_data[scenario_zone]))
 
     st.markdown("### Adjust the factor assumptions")
 
@@ -1038,6 +1042,52 @@ with tab_method:
         mime="text/plain",
         key="method_txt",
     )
+
+# ============================================================
+# TAB 7 — TERA-EYE (LIVE INGESTION & VISION MODULE)
+# ============================================================
+
+with tab_eye:
+    st.subheader("🛰️ TERA-EYE: Live Ingestion & Vision Engine")
+    st.caption("Multimodal computer vision and sensor ingestion module for TERA 2.0.")
+
+    col_cam1, col_cam2 = st.columns([2, 1])
+
+    with col_cam1:
+        st.markdown("### Live Tactical Drone Feed (Simulated HUD)")
+        st.markdown(
+            f"""
+            <div style="background:#05070e; border:2px solid {CYAN}; padding:20px; border-radius:12px; text-align:center; font-family:monospace;">
+                <div style="color:{GREEN}; font-size:0.9rem; margin-bottom:10px;">● RECORDING [FLIR_THERMAL_MODE // LIVE INGESTION ACTIVE]</div>
+                <div style="background:#0b1220; height:240px; border:1px dashed {GREEN}; display:flex; align-items:center; justify-content:center; color:{CYAN}; font-size:1.1rem; border-radius:8px; position:relative;">
+                    <div style="position:absolute; top:12px; left:12px; color:{RED}; font-size:0.75rem;">TARGET LOCKED: ANOMALY_DETECTED [98.4%]</div>
+                    <div style="position:absolute; bottom:12px; right:12px; color:{YELLOW}; font-size:0.75rem;">GPS: 23.2599° N, 77.4126° E</div>
+                    <div>📡 INGESTING DRONE STREAM PIXELS & CCTV FRAMES...</div>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        selected_eye_zone = st.selectbox(
+            "Select Target Zone for Feed Ingestion",
+            list(st.session_state.zones_data.keys()),
+            key="eye_target_zone"
+        )
+
+    with col_cam2:
+        st.markdown("### Vision AI Extractor")
+        st.write("Extracts unstructured video pixels and normalizes them to TERA's 0–100 scale.")
+
+        eye_h = st.slider("Extracted Hazard (H)", 0, 100, 75, key="eye_h")
+        eye_v = st.slider("Extracted Vulnerability (V)", 0, 100, 60, key="eye_v")
+        eye_p = st.slider("Extracted Population (P)", 0, 100, 50, key="eye_p")
+        eye_e = st.slider("Extracted Exposure (E)", 0, 100, 85, key="eye_e")
+        eye_urg = st.slider("Extracted Urgency (U)", 0, 100, 70, key="eye_urg")
+
+        if st.button("🚀 Push TERA-EYE Data to TERA 2.0 Database", type="primary"):
+            st.session_state.zones_data[selected_eye_zone] = [eye_h, eye_v, eye_p, eye_e, eye_urg]
+            st.success(f"Successfully injected live vision feed for **{selected_eye_zone}** into TERA 2.0 database!")
+            st.balloons()
 
 # -------------------- FOOTER --------------------
 
