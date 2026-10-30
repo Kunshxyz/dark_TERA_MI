@@ -347,82 +347,112 @@ tab_command, tab_zone, tab_compare, tab_scenario, tab_mission, tab_method = st.t
 # ============================================================
 # TAB 1: COMMAND CENTRE
 # ============================================================
-with tab_command:
-    st.subheader("Environmental Command Centre")
-    st.caption("A consolidated view of illustrative environmental-risk priorities.")
+with tabs[0]:
+    st.markdown("## Command Centre")
 
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Zones Analysed", len(zone_df))
-    col2.metric("Average Risk Index", f"{average_risk}/100")
-    col3.metric("Highest-Risk Zone", str(top_zone["Zone"]))
-    col4.metric("High / Critical Zones", high_critical_count)
+    a, b, c, d = st.columns(4)
 
-    left, right = st.columns([1.4, 1])
-
-    with left:
-        ranked = zone_df.sort_values("Risk Index", ascending=True)
-        bar = px.bar(
-            ranked,
-            x="Risk Index",
-            y="Zone",
-            orientation="h",
-            color="Priority",
-            color_discrete_map={
-                "CRITICAL": RED,
-                "HIGH": ORANGE,
-                "MODERATE": YELLOW,
-                "LOWER": GREEN,
-            },
-            text="Risk Index",
-            title="Zone priority ranking",
-            category_orders={
-                "Priority": ["CRITICAL", "HIGH", "MODERATE", "LOWER"]
-            },
-        )
-        bar.update_traces(textposition="outside", cliponaxis=False)
-        bar.update_xaxes(range=[0, 112], title="Illustrative index")
-        st.plotly_chart(style_plot(bar, 400), use_container_width=True)
-
-    with right:
-        counts = (
-            zone_df["Priority"]
-            .value_counts()
-            .reindex(["CRITICAL", "HIGH", "MODERATE", "LOWER"])
-            .fillna(0)
-            .reset_index()
-        )
-        counts.columns = ["Priority", "Zones"]
-        donut = px.pie(
-            counts,
-            names="Priority",
-            values="Zones",
-            hole=0.62,
-            title="Priority distribution",
-            color="Priority",
-            color_discrete_map={
-                "CRITICAL": RED,
-                "HIGH": ORANGE,
-                "MODERATE": YELLOW,
-                "LOWER": GREEN,
-            },
-        )
-        donut.update_traces(textposition="inside", textinfo="label+value")
-        st.plotly_chart(style_plot(donut, 400), use_container_width=True)
-
-    st.markdown("### Zone assessment table")
-    show_table(zone_df, 285)
-
-    st.info(
-        "A higher index indicates higher relative priority within this illustrative model. "
-        "It is not a percentage probability of a disaster."
+    a.metric("Average RPI", f"{df.RPI.mean():.1f}/100")
+    b.metric("Highest priority", top.Zone)
+    c.metric(
+        "Critical zones",
+        int((df.Classification == "CRITICAL").sum()),
+    )
+    d.metric(
+        "High-priority zones",
+        int((df.Classification == "HIGH").sum()),
     )
 
-    st.download_button(
-        "⬇️ Download zone results (CSV)",
-        data=zone_df.to_csv(index=False).encode("utf-8"),
-        file_name="tera_zone_results.csv",
-        mime="text/csv",
-        key="command_csv",
+    left, right = st.columns([1.2, 1])
+
+    with left:
+        st.markdown("### Zone risk ranking")
+
+        ranking = df.sort_values("RPI")
+
+        fig = px.bar(
+            ranking,
+            x="RPI",
+            y="Zone",
+            orientation="h",
+            color="Classification",
+            color_discrete_map=COLORS,
+            text="RPI",
+        )
+
+        fig.update_traces(
+            texttemplate="%{text:.1f}",
+            textposition="outside",
+            cliponaxis=False,
+        )
+
+        fig.update_xaxes(
+            range=[0, 110],
+            gridcolor=BORDER,
+            title="Risk Priority Index",
+        )
+        fig.update_yaxes(title="")
+
+        show_chart(fig, "command_risk_ranking", 370)
+
+    with right:
+        st.markdown("### Risk classification mix")
+
+        counts = (
+            df["Classification"]
+            .value_counts()
+            .reindex(PRIORITY_ORDER, fill_value=0)
+        )
+
+        pie_df = pd.DataFrame({
+            "Classification": counts.index,
+            "Zones": counts.values,
+        })
+
+        pie_df = pie_df[pie_df["Zones"] > 0]
+
+        if pie_df.empty:
+            st.info("No classification data is available yet.")
+        else:
+            pie = px.pie(
+                pie_df,
+                names="Classification",
+                values="Zones",
+                hole=0.68,
+                color="Classification",
+                color_discrete_map=COLORS,
+            )
+
+            pie.update_traces(
+                textposition="outside",
+                textinfo="label+value+percent",
+            )
+
+            pie.add_annotation(
+                text=f"<b>{len(df)}</b><br><span style='font-size:11px'>ZONES</span>",
+                x=0.5,
+                y=0.5,
+                showarrow=False,
+                font=dict(color=TEXT, size=20),
+            )
+
+            show_chart(pie, "command_classification_pie", 370)
+
+        st.caption(
+            "Live classification counts: changes whenever a zone score or factor weight changes."
+        )
+
+    st.markdown("### Live zone intelligence")
+
+    shown = df.copy()
+    shown["RPI"] = shown["RPI"].map(
+        lambda value: f"{value:.1f}"
+    )
+
+    st.dataframe(
+        shown,
+        use_container_width=True,
+        hide_index=True,
     )
 # ============================================================
 # TAB 2: ZONE INTELLIGENCE
