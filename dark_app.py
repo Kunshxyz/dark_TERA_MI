@@ -313,35 +313,84 @@ top_zone = zone_df.iloc[0]
 average_risk = round(zone_df["Risk Index"].mean(), 1)
 high_critical_count = int(zone_df["Priority"].isin(["HIGH", "CRITICAL"]).sum())
 
-# -------------------- SIDEBAR --------------------
+# -------------------- SIDEBAR SLIDERS --------------------
 with st.sidebar:
-    st.markdown("## 🌍 TERA 2.0")
-    st.caption("MIDNIGHT INTELLIGENCE")
+    st.markdown("## 🌍 TERA CONTROL")
+    st.caption("MIDNIGHT INTELLIGENCE EDITION")
     st.divider()
-    st.markdown("### System overview")
-    st.write("*Zones analysed:* 6")
-    st.write("*Scoring factors:* 5")
-    st.write("*Scoring model:* Weighted index")
-    st.divider()
-    st.markdown("### Priority thresholds")
-    st.markdown("🔴 *Critical:* 80–100")
-    st.markdown("🟠 *High:* 65–79.9")
-    st.markdown("🟡 *Moderate:* 45–64.9")
-    st.markdown("🟢 *Lower:* Below 45")
-    st.divider()
-    st.markdown("### Data integrity")
+
+    st.markdown("### Editable factor weights")
     st.caption(
-        "Demonstration values only. No live environmental sensor data is connected."
+        "Change these sliders; effective weights are automatically normalised to 100%."
     )
 
-# -------------------- TABS --------------------
-tab_command, tab_zone, tab_compare, tab_scenario, tab_mission, tab_method = st.tabs([
-    "⚡ Command Centre",
-    "🛰️ Zone Intelligence",
-    "📊 Compare Zones",
-    "🧪 Scenario Lab",
-    "🎯 Mission Control",
-    "📘 Methodology",
+    for factor in FACTORS:
+        new_weight = st.slider(
+            f"{factor} weight",
+            min_value=0,
+            max_value=100,
+            value=int(st.session_state.factor_weights[factor]),
+            step=1,
+            key=f"weight_{factor}",
+        )
+
+        st.session_state.factor_weights[factor] = new_weight
+
+    st.metric(
+        "Entered weight total",
+        f"{sum(st.session_state.factor_weights.values())}%",
+    )
+
+    st.button(
+        "Reset weights",
+        key="reset_weights",
+        on_click=reset_weights_callback,
+    )
+
+    st.divider()
+    st.markdown("### Editable zone scores")
+
+    edit_zone = st.selectbox(
+        "Select zone to edit",
+        list(st.session_state.zone_values),
+        key="edit_zone_select",
+    )
+
+    for i, factor in enumerate(FACTORS):
+        new_value = st.slider(
+            f"{edit_zone} · {factor}",
+            min_value=0,
+            max_value=100,
+            value=int(st.session_state.zone_values[edit_zone][i]),
+            step=1,
+            key=f"score_{edit_zone}_{factor}",
+        )
+
+        st.session_state.zone_values[edit_zone][i] = new_value
+
+    st.button(
+        "Reset selected zone",
+        key="reset_selected_zone",
+        on_click=reset_selected_zone_callback,
+    )
+
+    st.button(
+        "Reset all model data",
+        key="reset_all_model_data",
+        on_click=reset_all_callback,
+    )
+
+# Recalculate all data AFTER reading the slider state.
+df = dataframe()
+top = df.iloc[0]
+
+tabs = st.tabs([
+    "⌂ Command Centre",
+    "◈ Zone Intelligence",
+    "⇄ Compare Zones",
+    "⌁ Scenario Lab",
+    "✚ Mission Control",
+    "ⓘ Methodology",
 ])
 
 # ============================================================
