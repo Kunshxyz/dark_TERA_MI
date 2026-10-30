@@ -1,96 +1,122 @@
-import streamlit as st
-import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
+                            {title}
+                        </div>
+                        <div style="font-size:12px;line-height:1.65;
+                                    color:{MUTED};margin-top:4px;">
+                            {description}
+                        </div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
-# ============================================================
-# TERA 2.0 - MIDNIGHT INTELLIGENCE EDITION
-# Same six-tab dashboard; live charts are driven by the sliders.
-# ============================================================
+        st.markdown(
+            f"""
+            <div style="background:#10282B;border:1px solid #24584F;
+                        border-radius:13px;padding:15px 17px;margin-top:15px;">
+                <div style="font-size:10px;font-weight:900;letter-spacing:1.8px;
+                            color:{MINT};">COMMANDER'S REMINDER</div>
+                <div style="font-size:13px;line-height:1.75;color:#C4E2DB;margin-top:6px;">
+                    A strong commander does not simply choose the biggest number.
+                    They consider evidence, vulnerability, exposure, and the
+                    limits of available resources.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
-st.set_page_config(
-    page_title="TERA 2.0 | Midnight Intelligence",
-    page_icon="🌍",
-    layout="wide",
-)
+    with mission_right:
+        st.markdown(
+            f"""
+            <div style="background:linear-gradient(145deg,#12243A,#0B1726);
+                        border:1px solid #28758A;border-radius:19px;
+                        padding:18px 18px 12px 18px;text-align:center;
+                        box-shadow:0 12px 35px rgba(0,0,0,.22);">
+                <div style="font-size:10px;letter-spacing:2.5px;
+                            font-weight:900;color:{CYAN};">
+                    SECURE MISSION ACCESS
+                </div>
+                <div style="font-size:23px;font-weight:900;color:{TEXT};
+                            margin:8px 0 4px 0;">
+                    ENTER ECO COMMANDER
+                </div>
+                <div style="font-size:12px;color:{MUTED};line-height:1.6;
+                            margin-bottom:13px;">
+                    Scan the mission portal with your phone camera.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
-BG, PANEL, ALT = "#07111F", "#0D1B2A", "#102338"
-CYAN, MINT, TEXT, MUTED, BORDER = "#38D6E8", "#63F2C2", "#E7F1FA", "#9CB0C5", "#1D3850"
-COLORS = {
-    "CRITICAL": "#FF5C70",
-    "HIGH": "#FFB454",
-    "MODERATE": "#F5D76E",
-    "LOWER": "#63D9A5",
-}
-FACTORS = ["Hazard", "Vulnerability", "Population", "Exposure", "Urgency"]
-DEFAULT_WEIGHTS = {
-    "Hazard": 30,
-    "Vulnerability": 25,
-    "Population": 20,
-    "Exposure": 15,
-    "Urgency": 10,
-}
-DEFAULT_ZONES = {
-    "Forest": [72, 65, 35, 95, 75],
-    "Residential Area": [80, 85, 95, 45, 90],
-    "Hospital": [75, 90, 90, 30, 95],
-    "Smart Farm": [60, 65, 45, 75, 60],
-    "River & Dam": [85, 75, 70, 85, 85],
-    "Industrial Zone": [82, 70, 75, 65, 80],
-}
-FACTOR_COLORS = ["#38D6E8", "#63F2C2", "#8A9CFF", "#FFB454", "#E78BFF"]
-PRIORITY_ORDER = ["CRITICAL", "HIGH", "MODERATE", "LOWER"]
+        qr_path = Path(__file__).parent / "tera_lovable_qr.jpeg"
+        if qr_path.exists():
+            st.image(str(qr_path), use_container_width=True)
+        else:
+            st.warning(
+                "QR image not found. Upload the supplied image to the same "
+                "GitHub folder as app.py and name it tera_lovable_qr.jpeg."
+            )
 
-# Plotly's editable mode lets users adjust chart text/annotations in the chart UI.
-# The underlying values remain controlled by the sliders, so every rerun stays
-# consistent with the model data.
-PLOT_CONFIG = {
-    "displayModeBar": True,
-    "displaylogo": False,
-    "editable": True,
-    "toImageButtonOptions": {"format": "png", "filename": "TERA_chart", "scale": 2},
-}
+        st.markdown(
+            f"""
+            <div style="background:{PANEL};border:1px solid {BORDER};
+                        border-radius:0 0 16px 16px;padding:13px;
+                        text-align:center;margin-top:-8px;">
+                <div style="font-size:11px;font-weight:900;letter-spacing:1.5px;
+                            color:{MINT};">SCAN • LAUNCH • TAKE COMMAND</div>
+                <div style="font-size:11px;color:{MUTED};margin-top:5px;">
+                    TERA 2.0 // MIDNIGHT INTELLIGENCE EDITION
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
-# -------------------- DARK THEME + TABLE FIX --------------------
+        st.markdown("")
+        st.link_button(
+            "🚀 LAUNCH ECO COMMANDER",
+            "https://qrto.org/qdbhrj",
+            use_container_width=True,
+        )
+        st.caption(
+            "The launch button uses the same short link encoded in your supplied QR code."
+        )
+
+    st.markdown("")
+    st.markdown(
+        f"""
+        <div style="border-top:1px solid {BORDER};padding:20px 8px 8px 8px;
+                    text-align:center;">
+            <div style="font-size:11px;font-weight:900;letter-spacing:2px;color:{CYAN};">
+                THINK FAST. PRIORITISE WISELY. PROTECT THE FUTURE.
+            </div>
+            <div style="font-size:12px;color:{MUTED};margin-top:8px;">
+                ECO COMMANDER is a companion educational game experience.
+                Its scenarios and outcomes are simulated, not real emergency guidance.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+# -------------------- FOOTER --------------------
+st.divider()
 st.markdown(
     f"""
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
-
-    html, body, [class*="css"] {{
-        font-family: Manrope, sans-serif;
-        color: {TEXT};
-    }}
-    .stApp {{
-        background: radial-gradient(circle at 15% 0%, #10283A 0%, {BG} 42%);
-        color: {TEXT};
-    }}
-    [data-testid="stHeader"] {{
-        background: rgba(7,17,31,.92);
-    }}
-    [data-testid="stSidebar"] {{
-        background: #091725;
-        border-right: 1px solid {BORDER};
-    }}
-    [data-testid="stSidebar"] * {{
-        color: {TEXT};
-    }}
-    h1, h2, h3, h4, p, label, .stMarkdown, [data-testid="stCaptionContainer"] {{
-        color: {TEXT};
-    }}
-    [data-testid="stMetric"] {{
-        background: linear-gradient(145deg, {ALT}, {PANEL});
-        border: 1px solid {BORDER};
-        padding: 15px 18px;
-        border-radius: 16px;
-    }}
-    [data-testid="stMetricLabel"] {{
-        color: {MUTED} !important;
-    }}
-    [data-testid="stMetricValue"] {{
-        color: {TEXT} !important;
-    }}
-    div[data-testid="stTabs"] button {{
-        color: {MUTED};
-        font-weight: 700;
-    }}
+    <div style="text-align:center; padding:10px; color:{MUTED};">
+        <div style="color:{CYAN}; font-weight:800; letter-spacing:2px;">
+            TERA 2.0 • MIDNIGHT INTELLIGENCE
+        </div>
+        <div style="font-size:12px; margin-top:6px;">
+            Technology for Environmental Risk Analysis
+        </div>
+        <div style="font-size:11px; margin-top:5px;">
+            Educational prototype · Illustrative inputs · Not an operational early-warning system
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
