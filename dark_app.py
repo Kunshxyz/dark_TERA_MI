@@ -313,196 +313,118 @@ top_zone = zone_df.iloc[0]
 average_risk = round(zone_df["Risk Index"].mean(), 1)
 high_critical_count = int(zone_df["Priority"].isin(["HIGH", "CRITICAL"]).sum())
 
-# -------------------- SIDEBAR SLIDERS --------------------
+# -------------------- SIDEBAR --------------------
 with st.sidebar:
-    st.markdown("## 🌍 TERA CONTROL")
-    st.caption("MIDNIGHT INTELLIGENCE EDITION")
+    st.markdown("## 🌍 TERA 2.0")
+    st.caption("MIDNIGHT INTELLIGENCE")
     st.divider()
-
-    st.markdown("### Editable factor weights")
+    st.markdown("### System overview")
+    st.write("**Zones analysed:** 6")
+    st.write("**Scoring factors:** 5")
+    st.write("**Scoring model:** Weighted index")
+    st.divider()
+    st.markdown("### Priority thresholds")
+    st.markdown("🔴 **Critical:** 80–100")
+    st.markdown("🟠 **High:** 65–79.9")
+    st.markdown("🟡 **Moderate:** 45–64.9")
+    st.markdown("🟢 **Lower:** Below 45")
+    st.divider()
+    st.markdown("### Data integrity")
     st.caption(
-        "Change these sliders; effective weights are automatically normalised to 100%."
+        "Demonstration values only. No live environmental sensor data is connected."
     )
 
-    for factor in FACTORS:
-        new_weight = st.slider(
-            f"{factor} weight",
-            min_value=0,
-            max_value=100,
-            value=int(st.session_state.factor_weights[factor]),
-            step=1,
-            key=f"weight_{factor}",
-        )
-
-        st.session_state.factor_weights[factor] = new_weight
-
-    st.metric(
-        "Entered weight total",
-        f"{sum(st.session_state.factor_weights.values())}%",
-    )
-
-    st.button(
-        "Reset weights",
-        key="reset_weights",
-        on_click=reset_weights_callback,
-    )
-
-    st.divider()
-    st.markdown("### Editable zone scores")
-
-    edit_zone = st.selectbox(
-        "Select zone to edit",
-        list(st.session_state.zone_values),
-        key="edit_zone_select",
-    )
-
-    for i, factor in enumerate(FACTORS):
-        new_value = st.slider(
-            f"{edit_zone} · {factor}",
-            min_value=0,
-            max_value=100,
-            value=int(st.session_state.zone_values[edit_zone][i]),
-            step=1,
-            key=f"score_{edit_zone}_{factor}",
-        )
-
-        st.session_state.zone_values[edit_zone][i] = new_value
-
-    st.button(
-        "Reset selected zone",
-        key="reset_selected_zone",
-        on_click=reset_selected_zone_callback,
-    )
-
-    st.button(
-        "Reset all model data",
-        key="reset_all_model_data",
-        on_click=reset_all_callback,
-    )
-
-# Recalculate all data AFTER reading the slider state.
-df = dataframe()
-top = df.iloc[0]
-
-tabs = st.tabs([
-    "⌂ Command Centre",
-    "◈ Zone Intelligence",
-    "⇄ Compare Zones",
-    "⌁ Scenario Lab",
-    "✚ Mission Control",
-    "ⓘ Methodology",
+# -------------------- TABS --------------------
+tab_command, tab_zone, tab_compare, tab_scenario, tab_mission, tab_method = st.tabs([
+    "⚡ Command Centre",
+    "🛰️ Zone Intelligence",
+    "📊 Compare Zones",
+    "🧪 Scenario Lab",
+    "🎯 Mission Control",
+    "📘 Methodology",
 ])
 
 # ============================================================
 # TAB 1: COMMAND CENTRE
 # ============================================================
-with tabs[0]:
-    st.markdown("## Command Centre")
+with tab_command:
+    st.subheader("Environmental Command Centre")
+    st.caption("A consolidated view of illustrative environmental-risk priorities.")
 
-    a, b, c, d = st.columns(4)
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Zones Analysed", len(zone_df))
+    col2.metric("Average Risk Index", f"{average_risk}/100")
+    col3.metric("Highest-Risk Zone", str(top_zone["Zone"]))
+    col4.metric("High / Critical Zones", high_critical_count)
 
-    a.metric("Average RPI", f"{df.RPI.mean():.1f}/100")
-    b.metric("Highest priority", top.Zone)
-    c.metric(
-        "Critical zones",
-        int((df.Classification == "CRITICAL").sum()),
-    )
-    d.metric(
-        "High-priority zones",
-        int((df.Classification == "HIGH").sum()),
-    )
-
-    left, right = st.columns([1.2, 1])
+    left, right = st.columns([1.4, 1])
 
     with left:
-        st.markdown("### Zone risk ranking")
-
-        ranking = df.sort_values("RPI")
-
-        fig = px.bar(
-            ranking,
-            x="RPI",
+        ranked = zone_df.sort_values("Risk Index", ascending=True)
+        bar = px.bar(
+            ranked,
+            x="Risk Index",
             y="Zone",
             orientation="h",
-            color="Classification",
-            color_discrete_map=COLORS,
-            text="RPI",
+            color="Priority",
+            color_discrete_map={
+                "CRITICAL": RED,
+                "HIGH": ORANGE,
+                "MODERATE": YELLOW,
+                "LOWER": GREEN,
+            },
+            text="Risk Index",
+            title="Zone priority ranking",
+            category_orders={
+                "Priority": ["CRITICAL", "HIGH", "MODERATE", "LOWER"]
+            },
         )
-
-        fig.update_traces(
-            texttemplate="%{text:.1f}",
-            textposition="outside",
-            cliponaxis=False,
-        )
-
-        fig.update_xaxes(
-            range=[0, 110],
-            gridcolor=BORDER,
-            title="Risk Priority Index",
-        )
-        fig.update_yaxes(title="")
-
-        show_chart(fig, "command_risk_ranking", 370)
+        bar.update_traces(textposition="outside", cliponaxis=False)
+        bar.update_xaxes(range=[0, 112], title="Illustrative index")
+        st.plotly_chart(style_plot(bar, 400), use_container_width=True)
 
     with right:
-        st.markdown("### Risk classification mix")
-
         counts = (
-            df["Classification"]
+            zone_df["Priority"]
             .value_counts()
-            .reindex(PRIORITY_ORDER, fill_value=0)
+            .reindex(["CRITICAL", "HIGH", "MODERATE", "LOWER"])
+            .fillna(0)
+            .reset_index()
         )
-
-        pie_df = pd.DataFrame({
-            "Classification": counts.index,
-            "Zones": counts.values,
-        })
-
-        pie_df = pie_df[pie_df["Zones"] > 0]
-
-        if pie_df.empty:
-            st.info("No classification data is available yet.")
-        else:
-            pie = px.pie(
-                pie_df,
-                names="Classification",
-                values="Zones",
-                hole=0.68,
-                color="Classification",
-                color_discrete_map=COLORS,
-            )
-
-            pie.update_traces(
-                textposition="outside",
-                textinfo="label+value+percent",
-            )
-
-            pie.add_annotation(
-                text=f"<b>{len(df)}</b><br><span style='font-size:11px'>ZONES</span>",
-                x=0.5,
-                y=0.5,
-                showarrow=False,
-                font=dict(color=TEXT, size=20),
-            )
-
-            show_chart(pie, "command_classification_pie", 370)
-
-        st.caption(
-            "Live classification counts: changes whenever a zone score or factor weight changes."
+        counts.columns = ["Priority", "Zones"]
+        donut = px.pie(
+            counts,
+            names="Priority",
+            values="Zones",
+            hole=0.62,
+            title="Priority distribution",
+            color="Priority",
+            color_discrete_map={
+                "CRITICAL": RED,
+                "HIGH": ORANGE,
+                "MODERATE": YELLOW,
+                "LOWER": GREEN,
+            },
         )
+        donut.update_traces(textposition="inside", textinfo="label+value")
+        st.plotly_chart(style_plot(donut, 400), use_container_width=True)
 
-    st.markdown("### Live zone intelligence")
+    st.markdown("### Zone assessment table")
+    show_table(zone_df, 285)
 
-    shown = df.copy()
-    shown["RPI"] = shown["RPI"].map(
-        lambda value: f"{value:.1f}"
+    st.info(
+        "A higher index indicates higher relative priority within this illustrative model. "
+        "It is not a percentage probability of a disaster."
     )
 
-    st.dataframe(
-        shown,
-        use_container_width=True,
-        hide_index=True,
+    st.download_button(
+        "⬇ Download zone results (CSV)",
+        data=zone_df.to_csv(index=False).encode("utf-8"),
+        file_name="tera_zone_results.csv",
+        mime="text/csv",
+        key="command_csv",
     )
+
 # ============================================================
 # TAB 2: ZONE INTELLIGENCE
 # ============================================================
