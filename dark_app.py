@@ -418,13 +418,12 @@ with tab_command:
     )
 
     st.download_button(
-        "⬇ Download zone results (CSV)",
+        "⬇️ Download zone results (CSV)",
         data=zone_df.to_csv(index=False).encode("utf-8"),
         file_name="tera_zone_results.csv",
         mime="text/csv",
         key="command_csv",
     )
-
 # ============================================================
 # TAB 2: ZONE INTELLIGENCE
 # ============================================================
